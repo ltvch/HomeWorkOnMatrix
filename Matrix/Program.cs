@@ -1,272 +1,324 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 
-/// <summary>
-/// CASE реализовать несколько типов сортировки при этом БЫСТРАЯ сортировка обязательна
-/// Показать количество перемещений и количество сравнений елементов массива.
-/// 
-/// Проверить на массиве с случайными числами , на массиве с частично отсортированным по возрастающей и по убывающей от начала массива (3 шт).
-/// </summary>
+namespace TwoDimensionalArray
+{ 
 
-namespace SortInArray
-{
     internal class Program
     {
-        static int CountMove;
-        static int CountCompare;
+        const int HEIGTH = 5;
+        const int WIDTH = 5;
+        const int RANDOM_MAX = 10;
 
-        const int MINVALUE = 0;
-        const int MAXVALUE = 50;
-        const int SIZE = 10;
+        #region SERVICE METHODS
+        /// <summary>
+        /// Построить и заполнить массив рандомными числами.
+        /// 
+        /// </summary>
+        /// <param name="rows">Кол-во строк</param>
+        /// <param name="columns">Кол-во столбцов</param>
+        /// <param name="range">Максимальное допустимое число в рандоме.</param>
+        /// <returns>Заполненный рандомными числами массив.</returns>
+        /// <remarks>Закоментировать вывод в консоль для унификации</remarks>
+        private static int[,] RandomArray(int rows, int columns, int range)
+        {
+            //todo Закоментировать вывод в консоль для унификации
+            int[,] matrix = new int[rows, columns];
+            Random rnd = new Random();
 
-        /// <summary>
-        /// Создаем массив целых чисел с случайными данными
-        /// </summary>
-        /// <returns>Return fill array of integers</returns>
-        private static int[] RandomArray()
-        {
-            Random randNum = new Random();
-            return Enumerable
-                .Repeat(0, SIZE)
-                .Select(i => randNum.Next(MINVALUE, MAXVALUE))
-                .ToArray();
-        }
-       
-        /// <summary>
-        /// Swap two values use XOR
-        /// </summary>
-        /// <param name="x">First changed value</param>
-        /// <param name="y">Second changed value</param>
-        private static void Swap(ref int x, ref int y)
-        {
-            //x ^= y; y ^= x; x ^= y;//not work in QuickSort
-            int tmp = x;
-            x = y;
-            y = tmp;
-            CountMove++;
-        }
-
-        /// <summary>
-        /// Гномья сортировка - "простая и очевидная".
-        /// Смотрим на следующий и предыдущий елементы массива: если они в правильном порядке(предыдущий меньше следующего), шаг на один елемент вперёд,
-        /// иначе меняем их местами и шагает на один елемент назад. 
-        /// Граничные условия: если нет предыдущего елемента, шаг вперёд; если нет следующего елемента - закончили.
-        /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void GnomeSort(int[] array)
-        {
-            for (int i = 1; i < array.Length;)
+            for (int i = 0; i < rows; i++)
             {
-                if (array[i - 1] <= array[i])
+                for (int j = 0; j < columns; j++)
                 {
-                    CountCompare++;//only counter compare not need base code;
-                    i++;
+                    matrix[i, j] = rnd.Next(range);
+                    Console.Write("{0,4}", matrix[i, j]);
                 }
-                else
-                {
-                    Swap(ref array[i], ref array[i - 1]);
-                    --i;
-                    if (i == 0)
-                    {
-                        i = 1;
-                    }
-                }
+                Console.WriteLine();
+            }
+
+            return matrix;
+        }
+
+        /// <summary>
+        /// Показать двумерный массив в консоли.
+        /// </summary>
+        /// <param name="matrix">Двумерный массив для демонстрации</param>
+        private static void ShowMatrix(int[,] matrix)
+        {
+            for (int i = 0; i < matrix.GetLength(0); i++)
+            {
+                for (int j = 0; j < matrix.GetLength(1); j++)
+                    Console.Write("{0,4}", matrix[i, j]);
+                Console.WriteLine();
             }
         }
+        #endregion
 
         /// <summary>
-        /// Booble Sort
-        /// Если элемент слева больше, чем элемент справа, (array[i] > array[i+1]), такие элементы надо поменять местами.
+        /// Заполняем двумерный массив "улиткой" считая посещенные ячейки
         /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void BoobleSort(int[] array)
+        /// <param name="rows">"Количество строк" в двумерном массиве </param>
+        /// <param name="columns">"Количество столбцов" в двумерном массиве</param>
+        /// <returns>Массив с заполненными значениями</returns>
+        public static int[,] Helix(int rows, int columns)
         {
-            bool isSorted = true;
-            while (isSorted)//we think array is sorted by check it;
+            int[,] matrix = new int[rows, columns];
+
+            int row = 0;
+            int column = 0;
+            int dx = 1;
+            int dy = 0;
+            int dirChanges = 0;
+            int visits = columns;
+
+            for (int i = 0; i < rows * columns; i++)
             {
-                isSorted = false;//if insert think array is not sorted
-                for (int i = 0; i < array.Length - 1; ++i)
+                matrix[row,column] = i + 1;
+                if (--visits == 0)
                 {
-                    if (array[i] > array[i + 1])
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        Swap(ref array[i], ref array[i + 1]);
-                        isSorted = true;//think now array is sorted
-                    }
+                    visits = columns * (dirChanges % 2) +
+                        rows * ((dirChanges + 1) % 2) -
+                        (dirChanges / 2 - 1) - 2;
+                    int temp = dx;
+                    dx = -dy;
+                    dy = temp;
+                    dirChanges++;
                 }
+                column += dx;
+                row += dy;
             }
+
+            return matrix;
         }
 
         /// <summary>
-        /// Шейкерная или челночная или перемешиванием сортировка
-        /// Проходим слева направо, при этом при выполнении swap элементов проверяем все оставшиеся позади елементы, не нужно ли повторить перемену.
-        /// Т.е. Границы рабочей части массива (то есть части массива, где происходит движение) устанавливаются в месте последнего обмена на каждой итерации. 
-        /// Массив просматривается поочередно справа налево и слева направо.
+        /// Заполняем двумерный массив "улиткой" примитивным способом
+        /// то есть считаем количество элементов и поворотов наглядным алгоритмом.
         /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void CocktailSort(int[] array)
+        /// <param name="rows">"Количество строк" в двумерном массиве </param>
+        /// <param name="columns">"Количество столбцов" в двумерном массиве</param>
+        /// <returns>Массив с заполненными значениями</returns>
+        private static int[,] HelixEasy(int rows, int columns)
         {
-            for (int i = 1; i < array.Length; i++)
-            {
-                if (array[i] < array[i - 1])
-                {
-                    Swap(ref array[i], ref array[i - 1]);//right to left see
-                    for (int z = i - 1; (z - 1) >= 0; z--)//местo последнего обмена на каждой итерации
-                    {
-                        if (array[z] < array[z - 1])
-                        {
-                            CountCompare++;//only counter compare not need base code;
-                            Swap(ref array[z], ref array[z - 1]);//see left to right
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        /// <summary>
-        /// Сортировка выбором 
-        /// Каждый проход выбирать самый минимальный элемент и смещать его в начало.
-        /// При этом каждый новый проход начинать сдвигаясь вправо, то есть первый проход — с первого элемента, второй проход — со второго. 
-        /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void SelectedSort(int[] array)
-        {
-            for (int left = 0; left < array.Length; left++)
-            {
-                int min = left;
-                for (int i = left; i < array.Length; i++)
-                {
-                    if (array[i] < array[min])
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        min = i;
-                    }
-                }
-                Swap(ref array[left], ref array[min]);
-            }
-        }
+            int[,] matrix = new int[rows, columns];
 
+            int row = 0;
+            int col = 0;
+            string direction = "right";
+            int maxRotations = rows * columns;
 
-        /// <summary>
-        /// Сортировка вставками.
-        /// Берем буфер в который кладем первое не оказавшееся на свом месте значение(в нашем случае крайнее слева в неотсортированной части).
-        /// В массиве, начиная с правого края, просматриваются элементы и сравниваются с ключевым.
-        /// Если больше ключевого, то очередной элемент сдвигается на одну позицию вправо, освобождая место для последующих элементов.
-        /// Если попадается элемент, меньший или равный ключевому, то значит в текущую свободную ячейку массива можно вставить ключевой элемент.
-        /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void InsertionSort(int[] array)
-        {
-            for (int left = 0; left < array.Length; left++)
+            for (int i = 1; i <= maxRotations; i++)
             {
-                int value = array[left];
-                int i = left - 1;
-                for (; i >= 0; i--)
+                if (direction == "right" && (col > columns - 1 || matrix[row, col] != 0))
                 {
-                    if (value < array[i])
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        array[i + 1] = array[i];
-                    }
-                    else
-                    {
+                    direction = "down";
+                    col--;
+                    row++;
+                }
+                if (direction == "down" && (row > rows - 1 || matrix[row, col] != 0))
+                {
+                    direction = "left";
+                    row--;
+                    col--;
+                }
+                if (direction == "left" && (col < 0 || matrix[row, col] != 0))
+                {
+                    direction = "up";
+                    col++;
+                    row--;
+                }
+
+                if (direction == "up" && row < 0 || matrix[row, col] != 0)
+                {
+                    direction = "right";
+                    row++;
+                    col++;
+                }
+
+                matrix[row, col] = i;
+
+                switch (direction)
+                {
+                    case "right":
+                        col++;
                         break;
-                    }
+
+                    case "down":
+                        row++;
+                        break;
+                    case "left":
+                        col--;
+                        break;
+                    case "up":
+                        row--;
+                        break;
                 }
-                array[i + 1] = value;
             }
+            return matrix;
         }
 
         /// <summary>
-        /// Быстрая сортировка.  Хоара
-        /// Выбирается опорный элемент (например, посередине массива).
-        /// Массив просматривается слева-направо и производится поиск ближайшего элемента, больший чем опорный.
-        /// Массив просматривается справа-налево и производится поиск ближайшего элемента, меньший чем опорный.
-        /// Найденные элементы меняются местами.
-        /// Продолжается одновременный двухсторонний просмотр по массиву с последующими обменами в соответствии с пунктами 2-4.
-        /// В конце концов, просмотры слева-напрво и справа-налево сходятся в одной точке, которая делит массив на два подмассива.
-        /// К каждому из двух подмассивов рекурсивно применяется "Быстрая сортировка"
+        /// Заполняем двумерный массив "зигзагом" с левого верхнего угла.
         /// </summary>
-        /// <param name="array"></param>
-        /// <param name="left"></param>
-        /// <param name="right"></param>
-        private static void QuickSort(int[] array, int left, int right)
+        /// <param name="rows">"Количество строк" в двумерном массиве </param>
+        /// <param name="columns">"Количество столбцов" в двумерном массиве</param>
+        /// <returns>Масив с заполненными значениями</returns>
+        public static int[,] ZigZag(int rows, int columns)
         {
-            ///
-            int partition(int[] arr, int l, int r)
+            int[,] matrix = new int[rows, columns];
+            int i = 0,
+                j = 0,
+                d = -1; // -1 for top-right move, +1 for bottom-left move
+            int start = 0, 
+                end = rows * columns - 1;
+
+            do
             {
-                if (l > r) return -1;
+                matrix[i, j] = start++;// увеличим значение стартовой точки на единицу
+                matrix[rows - i - 1, columns - j - 1] = end--;// уменьшим значение елемента( налево вниз на один елемент) на единицу
+                i += d;
+                j -= d;
 
-                int end = l;
-
-                int pivot = arr[r];    // choose last one to pivot, easy to code
-                for (int i = l; i < r; i++)
+                if (i < 0)
                 {
-                    if (arr[i] < pivot)
+                    i++; //увеличим верх
+                    d = -d; // перевернем значение
+                }
+                else if (j < 0)
+                {
+                    j++; //увеличим счетчик налево
+                    d = -d; //перевернем значение
+                }
+            }
+            while (start < end);
+
+            if (start == end)
+                matrix[i, j] = start;
+
+            return matrix;
+        }
+
+        /// <summary>
+        /// Заполняем двумерный массив "змейкой" с левого верхнего угла.
+        /// </summary>
+        /// <param name="rows">"Количество строк" в двумерном массиве </param>
+        /// <param name="columns">"Количество столбцов" в двумерном массиве</param>
+        /// <returns>Масив с заполненными значениями</returns>
+        private static int[,] Snake(int rows, int columns)
+        {
+            int[,] matrix = new int[rows, columns];
+
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    matrix[i, j] = i * columns + (i % 2 == 0 ? j : columns - j - 1);
+
+            return matrix;
+        }
+
+        /// <summary>
+        /// Поменять местами строки, содержащие максимальный и минимальный элемент.
+        /// Если min и max элементы в одной строке, то поменять местами столбцы
+        /// </summary>
+        /// <param name="rows">"Количество строк" в двумерном массиве </param>
+        /// <param name="columns">"Количество столбцов" в двумерном массиве</param>
+        /// <returns>Масив с заполненными значениями</returns>
+        private static int[,] RotateMaxMin(int rows, int columns)
+        {
+            int[,] array = new int[rows, columns];
+            int minRow = 0, maxRow = 0;
+
+            void MaxMin(int[,] matrix)
+            {
+                int min = matrix[1, 1];
+                int max = matrix[1, 1];
+                
+                // определяем минимальную строку
+                for (int i = 1; i < 5; i++)
+                {
+                    for (int j = 0; j < 5; j++)
                     {
-                        CountCompare++;//only counter compare not need base code;
-                        Swap(ref arr[i], ref arr[end]);
-                        end++;
+                        if (matrix[i, j] < min)
+                        {
+                            min = matrix[i, j];
+                            minRow = i;
+                        }
                     }
                 }
 
-                Swap(ref arr[end], ref arr[r]);
-
-                return end;
+                // определяем максимальную строку
+                for (int i = 1; i < 5; i++)
+                {
+                    for (int j = 0; j < 5; j++)
+                    {
+                        if (matrix[i, j] > max)
+                        {
+                            max = matrix[i, j];
+                            maxRow = i;
+                        }
+                    }
+                }
             }
 
-
-        /// Выбрать элемент из массива. Назовём его опорным.
-        /// Разбиение: перераспределение элементов в массиве таким образом, что элементы меньше опорного помещаются перед ним, а больше или равные после.
-        /// Рекурсивно применить первые два шага к двум подмассивам слева и справа от опорного элемента. Рекурсия не применяется к массиву, в котором только один элемент или отсутствуют элементы.
-
-            int index = partition(array, left, right);
-
-            if (index != -1)
+            void ChangeRow(int[,] matrix)
             {
-                QuickSort(array, left, index - 1);
-                QuickSort(array, index + 1, right);
+                // перестановка строк
+                int[] matrixTemp = new int[matrix.GetLength(0)];
+                
+                //Заносим минимальную строку во временный массив
+                for (int i = minRow, j = 0, k = 0; j < 5; j++, k++)
+                {
+                    matrixTemp[k] = matrix[i, j];
+                }
+                //Заменяем минимальную строку максимальной
+                for (int j = 0; j < 5; j++)
+                {
+                    matrix[minRow, j] = matrix[maxRow, j];
+                }
+                //Заменяем максимальную строку минимальной
+                for (int j = 0; j < 5; j++)
+                {
+                    matrix[maxRow, j] = matrixTemp[j];
+                }
             }
+
+            array = RandomArray(rows, columns, RANDOM_MAX);
+            Console.WriteLine();
+            MaxMin(array);
+            Console.ForegroundColor = ConsoleColor.Gray;
+            ChangeRow(array);
+
+            return array;
         }
 
         private static void Main(string[] args)
         {
-            //int[] array = new int[] { 10, 3, 2, 1, 8, 3, 9, 0, 5, 5, 1 };
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Helix matrix is :");            
+            ShowMatrix(Helix(HEIGTH, WIDTH));
+            Console.WriteLine();
 
-            int[] array = RandomArray();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Helix(Easy way) matrix is :");
+            ShowMatrix(HelixEasy(HEIGTH, WIDTH));
+            Console.WriteLine();
 
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine("Unmodified Unsorted array -> [{0}]", string.Join(", ", array));
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("ZigZag matrix is :");
+            ShowMatrix(ZigZag(HEIGTH, WIDTH));
+            Console.WriteLine();
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("Snake matrix is :");
+            ShowMatrix(Snake(HEIGTH, WIDTH));
+            Console.WriteLine();
 
-            // BoobleSort(array);
-              SelectedSort(array);
-            //InsertionSort(array);
-            //GnomeSort(array);
-            // CocktailSort(array);
-
-            //Array.Sort(array);//default standart
-
-            //QuickSort(array, 0, array.Length - 1);
-
-            stopwatch.Stop();
-
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine("Modified Sorted array     -> [{0}]", string.Join(", ", array));
-
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("Rotate row where min and max value in matrix is :");
+            ShowMatrix(RotateMaxMin(HEIGTH, WIDTH));
+            Console.WriteLine();
 
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\nTicks of CPU during array sorting is " + stopwatch.ElapsedTicks);
-            Console.WriteLine("\nMiliseconds during array sorting is " + stopwatch.Elapsed);
-            Console.WriteLine($"\ncount compare = {CountCompare} and count move = {CountMove}");
-
             Console.WriteLine("\nPress any key to continue..");
             Console.ReadKey();
-        }
+        }       
     }
 }
