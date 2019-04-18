@@ -1,269 +1,195 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// CASE реализовать несколько типов сортировки при этом БЫСТРАЯ сортировка обязательна
-/// Показать количество перемещений и количество сравнений елементов массива.
-/// 
-/// Проверить на массиве с случайными числами , на массиве с частично отсортированным по возрастающей и по убывающей от начала массива (3 шт).
-/// </summary>
-
-namespace SortInArray
+namespace FindMinMaxElementInArray
 {
     internal class Program
     {
-        static int CountMove;
-        static int CountCompare;
-
-        const int MINVALUE = 0;
-        const int MAXVALUE = 50;
-        const int SIZE = 10;
-
         /// <summary>
-        /// Создаем массив целых чисел с случайными данными
+        /// Находим максимальную величину в массиве
         /// </summary>
-        /// <returns>Return fill array of integers</returns>
-        private static int[] RandomArray()
+        /// <param name="array">Array parameter</param>
+        /// <returns> Вернем значение максимального елемента в массиве.</returns>
+        private static int FindMax(int[] array)
         {
-            Random randNum = new Random();
-            return Enumerable
-                .Repeat(0, SIZE)
-                .Select(i => randNum.Next(MINVALUE, MAXVALUE))
-                .ToArray();
-        }
-       
-        /// <summary>
-        /// Swap two values use XOR
-        /// </summary>
-        /// <param name="x">First changed value</param>
-        /// <param name="y">Second changed value</param>
-        private static void Swap(ref int x, ref int y)
-        {
-            //x ^= y; y ^= x; x ^= y;//not work in QuickSort
-            int tmp = x;
-            x = y;
-            y = tmp;
-            CountMove++;
-        }
-
-        /// <summary>
-        /// Гномья сортировка - "простая и очевидная".
-        /// Смотрим на следующий и предыдущий елементы массива: если они в правильном порядке(предыдущий меньше следующего), шаг на один елемент вперёд,
-        /// иначе меняем их местами и шагает на один елемент назад. 
-        /// Граничные условия: если нет предыдущего елемента, шаг вперёд; если нет следующего елемента - закончили.
-        /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void GnomeSort(int[] array)
-        {
-            for (int i = 1; i < array.Length;)
+            int max = array[0];//подразумеваем, что первый елемент может соответствовать условию
+            foreach (int item in array)//и проверяем утверждение в цикле
             {
-                if (array[i - 1] <= array[i])
+                if (item >= max)
                 {
-                    CountCompare++;//only counter compare not need base code;
-                    i++;
-                }
-                else
-                {
-                    Swap(ref array[i], ref array[i - 1]);
-                    --i;
-                    if (i == 0)
-                    {
-                        i = 1;
-                    }
+                    max = item;
                 }
             }
+            return max;
         }
 
         /// <summary>
-        /// Booble Sort
-        /// Если элемент слева больше, чем элемент справа, (array[i] > array[i+1]), такие элементы надо поменять местами.
+        /// Находим минимальную величину в массиве
         /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void BoobleSort(int[] array)
+        /// <param name="array">Array parameter</param>
+        /// <returns> Вернем значение минимального елемента в массиве.</returns>
+        private static int FindMin(int[] array)
         {
-            bool isSorted = true;
-            while (isSorted)//we think array is sorted by check it;
+            int min = array[0];
+            foreach (int item in array)
             {
-                isSorted = false;//if insert think array is not sorted
-                for (int i = 0; i < array.Length - 1; ++i)
+                if (item <= min)
                 {
-                    if (array[i] > array[i + 1])
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        Swap(ref array[i], ref array[i + 1]);
-                        isSorted = true;//think now array is sorted
-                    }
+                    min = item;
+                }
+            }
+            return min;
+        }
+
+        /// <summary>
+        /// Заменяем по значению
+        /// все максимальные величины в массиве на минимальные
+        /// и минимальные на максимальные соответственно.
+        /// </summary>
+        /// <param name="array">Array parameter</param>
+        private static void ChangeMaxMin(int[] array)
+        {
+#if DEBUG
+            int max = FindMax(array);
+            int min = FindMin(array);
+#else
+            int max = array.Max();//standart method for max
+            int min = array.Min();//standart method for min
+#endif
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i] == min)
+                {
+                    array[i] = max;
+                }
+                else if (array[i] == max)
+                {
+                    array[i] = min;
                 }
             }
         }
 
         /// <summary>
-        /// Шейкерная или челночная или перемешиванием сортировка
-        /// Проходим слева направо, при этом при выполнении swap элементов проверяем все оставшиеся позади елементы, не нужно ли повторить перемену.
-        /// Т.е. Границы рабочей части массива (то есть части массива, где происходит движение) устанавливаются в месте последнего обмена на каждой итерации. 
-        /// Массив просматривается поочередно справа налево и слева направо.
+        /// Сдвинуть циклически вправо на n позиций 
         /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void CocktailSort(int[] array)
+        /// <param name="array">Array parameter</param>
+        /// <param name="positions">n позиций для сдвига вправо</param>
+        public static void RotateRight(int[] array, int positions)
         {
-            for (int i = 1; i < array.Length; i++)
-            {
-                if (array[i] < array[i - 1])
-                {
-                    Swap(ref array[i], ref array[i - 1]);//right to left see
-                    for (int z = i - 1; (z - 1) >= 0; z--)//местo последнего обмена на каждой итерации
-                    {
-                        if (array[z] < array[z - 1])
-                        {
-                            CountCompare++;//only counter compare not need base code;
-                            Swap(ref array[z], ref array[z - 1]);//see left to right
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        /// <summary>
-        /// Сортировка выбором 
-        /// Каждый проход выбирать самый минимальный элемент и смещать его в начало.
-        /// При этом каждый новый проход начинать сдвигаясь вправо, то есть первый проход — с первого элемента, второй проход — со второго. 
-        /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void SelectedSort(int[] array)
-        {
-            for (int left = 0; left < array.Length; left++)
-            {
-                int min = left;
-                for (int i = left; i < array.Length; i++)
-                {
-                    if (array[i] < array[min])
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        min = i;
-                    }
-                }
-                Swap(ref array[left], ref array[min]);
-            }
-        }
+            int size = array.Length;// загоням в переменную для снижения ко-ва пересчетов величины массива
 
-
-        /// <summary>
-        /// Сортировка вставками.
-        /// Берем буфер в который кладем первое не оказавшееся на свом месте значение(в нашем случае крайнее слева в неотсортированной части).
-        /// В массиве, начиная с правого края, просматриваются элементы и сравниваются с ключевым.
-        /// Если больше ключевого, то очередной элемент сдвигается на одну позицию вправо, освобождая место для последующих элементов.
-        /// Если попадается элемент, меньший или равный ключевому, то значит в текущую свободную ячейку массива можно вставить ключевой элемент.
-        /// </summary>
-        /// <param name="array">Sorted array</param>
-        private static void InsertionSort(int[] array)
-        {
-            for (int left = 0; left < array.Length; left++)
+            for (int i = 0; i < positions; i++)
             {
-                int value = array[left];
-                int i = left - 1;
-                for (; i >= 0; i--)
+                int temp = array[size - 1];//первым (на итерацию по позициям) берем крайний справа
+
+                for (int j = size - 1; j > 0; j--)
                 {
-                    if (value < array[i])
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        array[i + 1] = array[i];
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    array[j] = array[j - 1];//бежим от конца переставляя предыдущий и текущий елементы (ибо справа)
                 }
-                array[i + 1] = value;
+
+                array[0] = temp; //крайний слева (на итерацию по позициям) устанавливаем с временной переменной
             }
         }
 
         /// <summary>
-        /// Быстрая сортировка.  Хоара
-        /// Выбирается опорный элемент (например, посередине массива).
-        /// Массив просматривается слева-направо и производится поиск ближайшего элемента, больший чем опорный.
-        /// Массив просматривается справа-налево и производится поиск ближайшего элемента, меньший чем опорный.
-        /// Найденные элементы меняются местами.
-        /// Продолжается одновременный двухсторонний просмотр по массиву с последующими обменами в соответствии с пунктами 2-4.
-        /// В конце концов, просмотры слева-напрво и справа-налево сходятся в одной точке, которая делит массив на два подмассива.
-        /// К каждому из двух подмассивов рекурсивно применяется "Быстрая сортировка"
+        /// Сдвинуть циклически влево на n позиций 
         /// </summary>
-        /// <param name="array"></param>
-        /// <param name="left"></param>
-        /// <param name="right"></param>
-        private static void QuickSort(int[] array, int left, int right)
+        /// <param name="array">Array parameter</param>
+        /// <param name="positions">n позиций для сдвига влево</param>
+        public static void RotateLeft(int[] array, int positions)
         {
-            ///
-            int partition(int[] arr, int l, int r)
+            int size = array.Length;
+
+            for (int i = 0; i < positions; i++)
             {
-                if (l > r) return -1;
+                int temp = array[0];//первым (на итерацию по позициям) берем крайний слева
 
-                int end = l;
-
-                int pivot = arr[r];    // choose last one to pivot, easy to code
-                for (int i = l; i < r; i++)
+                for (int j = 0; j < size - 1; j++)//бежим по массиву с его начала
                 {
-                    if (arr[i] < pivot)
-                    {
-                        CountCompare++;//only counter compare not need base code;
-                        Swap(ref arr[i], ref arr[end]);
-                        end++;
-                    }
+                    array[j] = array[j + 1];// переставляя следующий и текущий елементы (ибо слева)
                 }
 
-                Swap(ref arr[end], ref arr[r]);
-
-                return end;
-            }
-
-
-        /// Выбрать элемент из массива. Назовём его опорным.
-        /// Разбиение: перераспределение элементов в массиве таким образом, что элементы меньше опорного помещаются перед ним, а больше или равные после.
-        /// Рекурсивно применить первые два шага к двум подмассивам слева и справа от опорного элемента. Рекурсия не применяется к массиву, в котором только один элемент или отсутствуют элементы.
-
-            int index = partition(array, left, right);
-
-            if (index != -1)
-            {
-                QuickSort(array, left, index - 1);
-                QuickSort(array, index + 1, right);
+                array[size - 1] = temp;// крайний справа(на итерацию по позициям) устанавливаем с временной переменной
             }
         }
 
+        /// <summary>
+        /// Циклический сдвиг слева направо на некоторую величину используя Linq
+        /// </summary>
+        /// <param name="array">Array parameter</param>
+        /// <param name="size"> Size of removal</param>
+        /// <returns> Array as Enumerable with offset on some position</returns>
+        private static IEnumerable<int> RoteteArrayUseLinq(int[] array, int size)
+        {
+            //будем пропускать все елементы до начала смещения включительно (фактически отрежем кусок массива)
+            //и затем добавим к нему кусок елементов из маcсива равное смещению  
+            //отрезание и добавление кусков фактичеcки сделают смещение массива
+            return array.Skip(size).Concat(array.Take(size));
+        }
+
+        /// <summary>
+        /// Является ли массив зеркально обратным самому себе - т.е. равно ли значение елемента массива его величине
+        /// </summary>
+        /// <param name="array">Array parameter</param>
+        /// <returns>Истино если массив зеркален</returns>
+        private static bool IsMirrorInverse(int[] array)
+        {
+            for (int i = 0; i < array.Length-1; i++)
+            {
+                //если значение хоть одного елемента не равено индексу
+                if (array[array[i]] != i)
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Является ли массив зеркально обратным самому себе
+        /// </summary>
+        /// <param name="array">Array parameter</param>
+        /// <returns>Истино если массив зеркален</returns>
+        private static bool IsMirror(int[] array)
+        {
+            //Простой подход заключается в создании нового массива путем добавления индекса в его значение 
+            int[] arr = new int[array.Length];
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i] == i)
+                    arr[i] = array[i];
+            }
+            //и проверки равен ли новый массив исходному или нет.
+            return array.SequenceEqual(arr);
+        }
+        
         private static void Main(string[] args)
         {
-            //int[] array = new int[] { 10, 3, 2, 1, 8, 3, 9, 0, 5, 5, 1 };
+            // int[] array = { 1, 2, 3, 0 };
+             int[] array = new int[] { 10, 3, 2, 1, 8, 3, 9, 0, 5, 5, 10 };
+            // int[] array = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Console.WriteLine("Array -> [{0}]", string.Join(", ", array));
 
-            int[] array = RandomArray();
+            if (IsMirrorInverse(array))
+                Console.WriteLine("Is array mirror - inverse  == Yes");
+            else
+                Console.WriteLine("Is array mirror - inverse == No");
 
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine("Unmodified Unsorted array -> [{0}]", string.Join(", ", array));
+            Console.WriteLine($"Easy way check array is mirror or not - {IsMirror(array)}");
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            Console.WriteLine("\nMax value in array is {0}", FindMax(array));
+            Console.WriteLine("\nMin value in array is {0}", FindMin(array));
 
-            // BoobleSort(array);
-              SelectedSort(array);
-            //InsertionSort(array);
-            //GnomeSort(array);
-            // CocktailSort(array);
+            Console.WriteLine("\nMin value in array is {0} (we use linq)", array.Min());
 
-            //Array.Sort(array);//default standart
+            //ChangeMaxMin(array);
+            // var array1 = RoteteArrayUseLinq(array, 3);
 
-            //QuickSort(array, 0, array.Length - 1);
+            //RotateLeft(array, 5);//true and work
+            //RotateRight(array, 5);//true and work           
 
-            stopwatch.Stop();
+            Console.WriteLine("Array -> [{0}]", string.Join(", ", array/*array1*/));
 
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine("Modified Sorted array     -> [{0}]", string.Join(", ", array));
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\nTicks of CPU during array sorting is " + stopwatch.ElapsedTicks);
-            Console.WriteLine("\nMiliseconds during array sorting is " + stopwatch.Elapsed);
-            Console.WriteLine($"\ncount compare = {CountCompare} and count move = {CountMove}");
 
             Console.WriteLine("\nPress any key to continue..");
             Console.ReadKey();
